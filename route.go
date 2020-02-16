@@ -40,7 +40,10 @@ func newHandlerRoute(method string, path string, handler http.Handler) *Route {
 }
 
 func newStringerRoute(method string, path string, handler fmt.Stringer) *Route {
-	return newStringRoute(method, path, handler.String())
+	f := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(handler.String()))
+	})
+	return newHandlerRoute(method, path, f)
 }
 
 func newStringRoute(method string, path string, response string) *Route {
