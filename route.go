@@ -7,7 +7,7 @@ import (
 
 // Route is a single entrypoint into the router.
 type Route struct {
-	method  string
+	methods []string
 	path    string
 	handler http.Handler
 
@@ -22,40 +22,40 @@ func (route *Route) Middleware(middleware ...Middleware) *Route {
 }
 
 // NewRoute creates a new route definition for a given method, path and handler.
-func NewRoute(method string, path string, handler interface{}) *Route {
+func NewRoute(methods []string, path string, handler interface{}) *Route {
 	switch handler.(type) {
 	case string:
-		return newStringRoute(method, path, handler.(string))
+		return newStringRoute(methods, path, handler.(string))
 	case fmt.Stringer:
-		return newStringerRoute(method, path, handler.(fmt.Stringer))
+		return newStringerRoute(methods, path, handler.(fmt.Stringer))
 	case func(http.ResponseWriter, *http.Request):
-		return newHandlerRoute(method, path, http.HandlerFunc(handler.(func(http.ResponseWriter, *http.Request))))
+		return newHandlerRoute(methods, path, http.HandlerFunc(handler.(func(http.ResponseWriter, *http.Request))))
 	default:
-		return newHandlerRoute(method, path, handler.(http.Handler))
+		return newHandlerRoute(methods, path, handler.(http.Handler))
 	}
 }
 
-func newHandlerRoute(method string, path string, handler http.Handler) *Route {
+func newHandlerRoute(methods []string, path string, handler http.Handler) *Route {
 	return &Route{
-		method:  method,
+		methods: methods,
 		path:    path,
 		handler: handler,
 	}
 }
 
-func newStringerRoute(method string, path string, handler fmt.Stringer) *Route {
+func newStringerRoute(methods []string, path string, handler fmt.Stringer) *Route {
 	f := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(handler.String()))
 	})
-	return newHandlerRoute(method, path, f)
+	return newHandlerRoute(methods, path, f)
 }
 
-func newStringRoute(method string, path string, response string) *Route {
+func newStringRoute(methods []string, path string, response string) *Route {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(response))
 	})
 
-	return newHandlerRoute(method, path, h)
+	return newHandlerRoute(methods, path, h)
 }
 
 func (route *Route) serve(w http.ResponseWriter, r *http.Request) {
