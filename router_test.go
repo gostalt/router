@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// Routers must respond with a 404 status code if the path
-// given cannot be found.
 func TestUnregisteredRoutesReturn404(t *testing.T) {
 	server := httptest.NewServer(New())
 	defer server.Close()
