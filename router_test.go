@@ -36,3 +36,18 @@ func TestRegisteredRouteCanBeAccessed(t *testing.T) {
 		t.Errorf("Expected `%s`, got `%s`", expected, string(body))
 	}
 }
+
+func TestRoutesCanOnlyBeAccessedByRegisteredMethods(t *testing.T) {
+	r := New()
+	r.Get("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello"))
+	}))
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	resp, _ := http.Post(server.URL, "application/json", nil)
+
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("Expected %d, got %d", http.StatusMethodNotAllowed, resp.StatusCode)
+	}
+}

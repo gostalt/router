@@ -6,6 +6,7 @@ import (
 )
 
 type Route struct {
+	method  string
 	path    string
 	handler http.Handler
 
