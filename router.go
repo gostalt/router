@@ -9,6 +9,8 @@ import (
 // to a http.Server.
 type Router struct {
 	routes []*Route
+
+	groups []*Group
 }
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +31,21 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (router *Router) findRoute(path string, method string) (*Route, error) {
+	// TODO: This is very poor, but will do for now.
+	for _, group := range router.groups {
+		for _, route := range group.routes {
+			if group.prefix+route.path == path {
+				for _, m := range route.methods {
+					if m == method {
+						return route, nil
+					}
+				}
+
+				return &Route{}, MethodNotAllowed{}
+			}
+		}
+	}
+
 	for _, route := range router.routes {
 		if route.path == path {
 			for _, m := range route.methods {
@@ -108,9 +125,18 @@ func (router *Router) addRoute(methods []string, path string, handler interface{
 	return r
 }
 
+func (router *Router) Group(routes ...*Route) *Group {
+	g := NewGroup(routes...)
+
+	router.groups = append(router.groups, g)
+
+	return g
+}
+
 // New creates a new router instance.
 func New() *Router {
 	return &Router{
 		routes: []*Route{},
+		groups: []*Group{},
 	}
 }
