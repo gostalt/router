@@ -40,15 +40,11 @@ func (router *Router) findRoute(path string, method string) (*Route, error) {
 	return &Route{}, RouteNotFound{}
 }
 
-func (router *Router) Get(path string, handler http.Handler) *Route {
-	route := &Route{
-		method:  http.MethodGet,
-		path:    path,
-		handler: handler,
-	}
-	router.routes = append(router.routes, route)
+func (router *Router) Get(path string, handler interface{}) *Route {
+	r := NewRoute(http.MethodGet, path, handler)
+	router.routes = append(router.routes, r)
 
-	return route
+	return r
 }
 
 func New() *Router {

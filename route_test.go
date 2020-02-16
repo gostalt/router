@@ -9,10 +9,10 @@ import (
 
 func TestRouteInference(t *testing.T) {
 	routes := []*Route{
-		NewRoute("/string", "Test"),
-		NewRoute("/stringer", stringHandler{}),
-		NewRoute("/handler", testHandler),
-		NewRoute("/handler2", testFunc),
+		NewRoute(http.MethodGet, "/string", "Test"),
+		NewRoute(http.MethodGet, "/stringer", stringHandler{}),
+		NewRoute(http.MethodGet, "/handler", testHandler),
+		NewRoute(http.MethodGet, "/handler2", testFunc),
 	}
 
 	rr := httptest.NewRecorder()

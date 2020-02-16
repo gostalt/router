@@ -22,7 +22,7 @@ func twoMiddleware(next http.Handler) http.Handler {
 }
 
 func TestCanAddMiddleware(t *testing.T) {
-	r := NewRoute("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r := NewRoute(http.MethodGet, "/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello"))
 	})).Middleware(oneMiddleware, twoMiddleware)
 
