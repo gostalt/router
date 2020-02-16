@@ -42,7 +42,7 @@ func TestCanAddMiddlewareToRoute(t *testing.T) {
 func TestCanAddMiddlewareToGroup(t *testing.T) {
 	r := New()
 	r.Group(
-		NewRoute([]string{http.MethodGet}, "/test", "Test"),
+		Get("/test", "Test"),
 	).Middleware(oneMiddleware, twoMiddleware)
 
 	server := httptest.NewServer(r)
@@ -61,7 +61,7 @@ func TestCanAddMiddlewareToGroup(t *testing.T) {
 func TestGroupMiddlewareWrapsRouteMiddleware(t *testing.T) {
 	r := New()
 	r.Group(
-		NewRoute([]string{http.MethodGet}, "/test", "Test").Middleware(oneMiddleware, twoMiddleware),
+		Get("/test", "Test").Middleware(oneMiddleware, twoMiddleware),
 	).Middleware(oneMiddleware, twoMiddleware)
 
 	server := httptest.NewServer(r)

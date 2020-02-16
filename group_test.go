@@ -8,8 +8,9 @@ import (
 
 func TestFindRoutesInGroups(t *testing.T) {
 	r := New()
-	rt := NewRoute([]string{http.MethodGet}, "/test", "Test")
-	r.Group(rt).Prefix("/group")
+	r.Group(
+		Get("/test", "Test"),
+	).Prefix("/group")
 
 	server := httptest.NewServer(r)
 	defer server.Close()
