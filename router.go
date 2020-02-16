@@ -93,6 +93,14 @@ func (router *Router) Any(path string, handler interface{}) *Route {
 	return router.addRoute(verbs, path, handler)
 }
 
+func (router *Router) Redirect(from string, to string) *Route {
+	redirect := func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, to, http.StatusPermanentRedirect)
+	}
+
+	return router.addRoute([]string{http.MethodGet}, from, redirect)
+}
+
 func (router *Router) addRoute(methods []string, path string, handler interface{}) *Route {
 	r := NewRoute(methods, path, handler)
 	router.routes = append(router.routes, r)

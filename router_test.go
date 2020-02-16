@@ -51,3 +51,22 @@ func TestRoutesCanOnlyBeAccessedByRegisteredMethods(t *testing.T) {
 		t.Errorf("Expected %d, got %d", http.StatusMethodNotAllowed, resp.StatusCode)
 	}
 }
+
+func TestRedirectRoute(t *testing.T) {
+	r := New()
+	r.Redirect("/", "/new")
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	// Prevent redirects from occuring, so we can check the status code of the request.
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}}
+
+	resp, _ := client.Get(server.URL)
+
+	if resp.StatusCode != http.StatusPermanentRedirect {
+		t.Errorf("Expected %d, got %d", http.StatusPermanentRedirect, resp.StatusCode)
+	}
+}
