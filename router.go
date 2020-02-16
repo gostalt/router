@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+// Router is an http.Handler that you can register routes against. It can be passed
+// to a http.Server.
 type Router struct {
 	routes []*Route
 }
@@ -23,7 +25,7 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	route.ServeHTTP(w, r)
+	route.serve(w, r)
 }
 
 func (router *Router) findRoute(path string, method string) (*Route, error) {
@@ -40,6 +42,7 @@ func (router *Router) findRoute(path string, method string) (*Route, error) {
 	return &Route{}, RouteNotFound{}
 }
 
+// Get defines a new `GET` route on the router, at the given path.
 func (router *Router) Get(path string, handler interface{}) *Route {
 	r := NewRoute(http.MethodGet, path, handler)
 	router.routes = append(router.routes, r)
@@ -47,6 +50,7 @@ func (router *Router) Get(path string, handler interface{}) *Route {
 	return r
 }
 
+// New creates a new router instance.
 func New() *Router {
 	return &Router{
 		routes: []*Route{},

@@ -19,7 +19,7 @@ func TestRouteInference(t *testing.T) {
 
 	for _, rt := range routes {
 		req, _ := http.NewRequest(http.MethodGet, "/", nil)
-		rt.ServeHTTP(rr, req)
+		rt.serve(rr, req)
 		body, _ := ioutil.ReadAll(rr.Body)
 		expected := "Test"
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// Route is a single entrypoint into the router.
 type Route struct {
 	method  string
 	path    string
@@ -13,11 +14,14 @@ type Route struct {
 	middleware []Middleware
 }
 
-func (r *Route) Middleware(middleware ...Middleware) *Route {
-	r.middleware = append(r.middleware, middleware...)
-	return r
+// Middleware defines additional logic on a single route definition by wrapping the
+// route's handler in extra layers of logic.
+func (route *Route) Middleware(middleware ...Middleware) *Route {
+	route.middleware = append(route.middleware, middleware...)
+	return route
 }
 
+// NewRoute creates a new route definition for a given method, path and handler.
 func NewRoute(method string, path string, handler interface{}) *Route {
 	switch handler.(type) {
 	case string:
@@ -54,7 +58,7 @@ func newStringRoute(method string, path string, response string) *Route {
 	return newHandlerRoute(method, path, h)
 }
 
-func (route *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (route *Route) serve(w http.ResponseWriter, r *http.Request) {
 	handler := route.handler
 	for _, m := range route.middleware {
 		handler = m(handler)

@@ -29,7 +29,7 @@ func TestCanAddMiddleware(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
 
-	r.ServeHTTP(rr, req)
+	r.serve(rr, req)
 
 	body, _ := ioutil.ReadAll(rr.Body)
 	expected := "21Hello"
