@@ -21,7 +21,7 @@ func twoMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func TestCanAddMiddleware(t *testing.T) {
+func TestCanAddMiddlewareToRoute(t *testing.T) {
 	r := NewRoute([]string{http.MethodGet}, "/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello"))
 	})).Middleware(oneMiddleware, twoMiddleware)
@@ -33,6 +33,44 @@ func TestCanAddMiddleware(t *testing.T) {
 
 	body, _ := ioutil.ReadAll(rr.Body)
 	expected := "21Hello"
+
+	if string(body) != expected {
+		t.Errorf("Got %s, wanted %s.", string(body), expected)
+	}
+}
+
+func TestCanAddMiddlewareToGroup(t *testing.T) {
+	r := New()
+	r.Group(
+		NewRoute([]string{http.MethodGet}, "/test", "Test"),
+	).Middleware(oneMiddleware, twoMiddleware)
+
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	resp, _ := http.Get(server.URL + "/test")
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	expected := "21Test"
+
+	if string(body) != expected {
+		t.Errorf("Got %s, wanted %s.", string(body), expected)
+	}
+}
+
+func TestGroupMiddlewareWrapsRouteMiddleware(t *testing.T) {
+	r := New()
+	r.Group(
+		NewRoute([]string{http.MethodGet}, "/test", "Test").Middleware(oneMiddleware, twoMiddleware),
+	).Middleware(oneMiddleware, twoMiddleware)
+
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	resp, _ := http.Get(server.URL + "/test")
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	expected := "2121Test"
 
 	if string(body) != expected {
 		t.Errorf("Got %s, wanted %s.", string(body), expected)

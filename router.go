@@ -37,6 +37,7 @@ func (router *Router) findRoute(path string, method string) (*Route, error) {
 			if group.prefix+route.path == path {
 				for _, m := range route.methods {
 					if m == method {
+						route.Middleware(group.middleware...)
 						return route, nil
 					}
 				}
