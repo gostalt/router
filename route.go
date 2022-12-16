@@ -36,8 +36,6 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 		path = "/" + path
 	}
 
-	// TODO: Hardcoded for now
-
 	r := &Route{
 		methods: methods,
 		path:    path,
@@ -134,10 +132,9 @@ func (r *Route) Regex() *regexp.Regexp {
 }
 
 func (r *Route) calculateRouteRegex(path string) *regexp.Regexp {
-	rx := regexp.MustCompile("{.+}")
+	rx := regexp.MustCompile("{(.+)}")
 	r.params = r.getParamsFromURI(path)
-	// TODO: Don't hardcode ID here. Must work it out from the param name.
-	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<id>.+)") + "$")
+	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<$1>.+)") + "$")
 }
 
 func (r *Route) getParamsFromURI(uri string) []string {
