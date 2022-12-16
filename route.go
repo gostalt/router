@@ -146,15 +146,7 @@ func (r *Route) calculateRouteRegex(path string) *regexp.Regexp {
 	path = r.normalizeParamaterizedPath(path)
 
 	rx := regexp.MustCompile("{([^}:]+):?([^}]+)?}")
-	// slice of matches {}
-	// first elem is full match
-	// second elem is the name
-	// third elem is the (optional) regex
-
-	// dont care about first elem
-	// second is appended to the route params
 	res2 := rx.FindAllStringSubmatch(path, -1)
-	fmt.Println("res2 is", res2)
 	for _, v := range res2 {
 		r.params = append(r.params, param{v[1], regexp.MustCompile(v[2])})
 	}
