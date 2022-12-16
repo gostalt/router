@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 // Route is a single entrypoint into the router.
@@ -11,6 +12,9 @@ type Route struct {
 	path    string
 	handler http.Handler
 	regex   *regexp.Regexp
+
+	// The {} bits of a route
+	params []string
 
 	middleware []Middleware
 }
@@ -33,14 +37,15 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 	}
 
 	// TODO: Hardcoded for now
-	regex := calculateRouteRegex(path)
 
-	return &Route{
+	r := &Route{
 		methods: methods,
 		path:    path,
 		handler: handler,
-		regex:   regex,
 	}
+
+	r.regex = r.calculateRouteRegex(path)
+	return r
 }
 
 func (route *Route) Serve(w http.ResponseWriter, r *http.Request) {
@@ -128,6 +133,22 @@ func (r *Route) Regex() *regexp.Regexp {
 	return r.regex
 }
 
-func calculateRouteRegex(path string) *regexp.Regexp {
-	return regexp.MustCompile(path)
+func (r *Route) calculateRouteRegex(path string) *regexp.Regexp {
+	rx := regexp.MustCompile("{.+}")
+	r.params = r.getParamsFromURI(path)
+	// TODO: Don't hardcode ID here. Must work it out from the param name.
+	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<id>.+)") + "$")
+}
+
+func (r *Route) getParamsFromURI(uri string) []string {
+	var params []string
+	rx := regexp.MustCompile("{.+}")
+	res := rx.FindAllString(uri, -1)
+	for _, v := range res {
+		v = strings.TrimPrefix(v, "{")
+		v = strings.TrimSuffix(v, "}")
+		params = append(r.params, v)
+	}
+
+	return params
 }

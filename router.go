@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -39,6 +40,18 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("405 method not allowed"))
 			return
 		}
+	}
+
+	if err := r.ParseForm(); err != nil {
+
+		panic(err)
+	}
+
+	match := route.Regex().FindStringSubmatch(r.RequestURI)
+	fmt.Println(match)
+	for _, k := range route.params {
+		i := route.Regex().SubexpIndex(k)
+		r.Form.Add(k, match[i])
 	}
 
 	route.Serve(w, r)
