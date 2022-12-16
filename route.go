@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -49,7 +48,6 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 	}
 
 	r.regex = r.calculateRouteRegex(path)
-	fmt.Println("route regex is", r.regex.String())
 	return r
 }
 
