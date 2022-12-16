@@ -76,26 +76,26 @@ func TestRouteDispatching(t *testing.T) {
 	server := httptest.NewServer(router)
 	defer server.Close()
 
-	router.Get("user/profile", func() string {
-		return "Hello"
+	t.Run("test basic get", func(t *testing.T) {
+		router.Get("user/profile", func() string {
+			return "Hello"
+		})
+		assert.Equal(t, "Hello", get(server.URL+"/user/profile"))
 	})
-	assert.Equal(t, "Hello", get(server.URL+"/user/profile"))
 
-	router.Post("users", func() string {
-		return "Hello post"
+	t.Run("test basic post", func(t *testing.T) {
+		router.Post("users", func() string {
+			return "Hello post"
+		})
+		assert.Equal(t, "Hello post", post(server.URL+"/users"))
 	})
-	assert.Equal(t, "Hello post", post(server.URL+"/users"))
 
-	router.Get("users/{userId}/posts/{postId}", func(req *http.Request) string {
-		return fmt.Sprintf("Hello %s on post %s!", req.Form.Get("userId"), req.Form.Get("postId"))
+	t.Run("test parameterised route", func(t *testing.T) {
+		router.Get("users/{userId}/posts/{postId}", func(req *http.Request) string {
+			return fmt.Sprintf("Hello %s on post %s!", req.Form.Get("userId"), req.Form.Get("postId"))
+		})
+		assert.Equal(t, "Hello 30 on post 28!", get(server.URL+"/users/30/posts/28"))
 	})
-	assert.Equal(t, "Hello 30 on post 28!", get(server.URL+"/users/30/posts/28"))
-
-	router.Get("users/{id}", func(req *http.Request) string {
-		return fmt.Sprintf("Hello %s!", req.Form.Get("id"))
-	})
-	assert.Equal(t, "Hello 30!", get(server.URL+"/users/30"))
-
 }
 
 // get is a convenience method that fires off a GET request and assumes a positive
