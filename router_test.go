@@ -86,10 +86,16 @@ func TestRouteDispatching(t *testing.T) {
 	})
 	assert.Equal(t, "Hello post", post(server.URL+"/users"))
 
+	router.Get("users/{userId}/posts/{postId}", func(req *http.Request) string {
+		return fmt.Sprintf("Hello %s on post %s!", req.Form.Get("userId"), req.Form.Get("postId"))
+	})
+	assert.Equal(t, "Hello 30 on post 28!", get(server.URL+"/users/30/posts/28"))
+
 	router.Get("users/{id}", func(req *http.Request) string {
 		return fmt.Sprintf("Hello %s!", req.Form.Get("id"))
 	})
 	assert.Equal(t, "Hello 30!", get(server.URL+"/users/30"))
+
 }
 
 // get is a convenience method that fires off a GET request and assumes a positive

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -43,6 +44,7 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 	}
 
 	r.regex = r.calculateRouteRegex(path)
+	fmt.Println("Route regex is", r.regex.String())
 	return r
 }
 
@@ -132,19 +134,22 @@ func (r *Route) Regex() *regexp.Regexp {
 }
 
 func (r *Route) calculateRouteRegex(path string) *regexp.Regexp {
-	rx := regexp.MustCompile("{(.+)}")
+	rx := regexp.MustCompile("{([^}]+)}")
 	r.params = r.getParamsFromURI(path)
+	fmt.Println("The params are", r.params)
 	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<$1>.+)") + "$")
 }
 
 func (r *Route) getParamsFromURI(uri string) []string {
 	var params []string
-	rx := regexp.MustCompile("{.+}")
+	rx := regexp.MustCompile("{([^}]+)}")
 	res := rx.FindAllString(uri, -1)
+	fmt.Println("The res is", res)
 	for _, v := range res {
+		fmt.Println("param", v)
 		v = strings.TrimPrefix(v, "{")
 		v = strings.TrimSuffix(v, "}")
-		params = append(r.params, v)
+		params = append(params, v)
 	}
 
 	return params
