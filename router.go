@@ -2,7 +2,6 @@ package router
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -47,11 +46,9 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	match := route.Regex().FindStringSubmatch(r.RequestURI)
-	fmt.Println(match)
-	fmt.Println("Route params", route.params)
 	for _, k := range route.params {
-		i := route.Regex().SubexpIndex(k)
-		r.Form.Add(k, match[i])
+		i := route.Regex().SubexpIndex(k.name)
+		r.Form.Add(k.name, match[i])
 	}
 
 	route.Serve(w, r)

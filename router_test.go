@@ -97,6 +97,13 @@ func TestRouteDispatching(t *testing.T) {
 		assert.Equal(t, "Hello 30 on post 28!", get(server.URL+"/users/30/posts/28"))
 	})
 
+	t.Run("test parameterised route with patterns", func(t *testing.T) {
+		router.Get("posts/{postId:[0-9]+}", func(req *http.Request) string {
+			return fmt.Sprintf("Hello post %s!", req.Form.Get("postId"))
+		})
+		assert.Equal(t, "Hello post 28!", get(server.URL+"/posts/28"))
+	})
+
 	t.Run("duplicate records uses last registered", func(t *testing.T) {
 		router.Get("duplicate", func() string {
 			return "first"

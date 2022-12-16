@@ -15,9 +15,14 @@ type Route struct {
 	regex   *regexp.Regexp
 
 	// The {} bits of a route
-	params []string
+	params []param
 
 	middleware []Middleware
+}
+
+type param struct {
+	name  string
+	regex *regexp.Regexp
 }
 
 // Middleware defines additional logic on a single route definition by wrapping the
@@ -44,7 +49,7 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 	}
 
 	r.regex = r.calculateRouteRegex(path)
-	fmt.Println("Route regex is", r.regex.String())
+	fmt.Println("route regex is", r.regex.String())
 	return r
 }
 
@@ -134,23 +139,31 @@ func (r *Route) Regex() *regexp.Regexp {
 }
 
 func (r *Route) calculateRouteRegex(path string) *regexp.Regexp {
-	rx := regexp.MustCompile("{([^}]+)}")
-	r.params = r.getParamsFromURI(path)
-	fmt.Println("The params are", r.params)
-	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<$1>.+)") + "$")
-}
-
-func (r *Route) getParamsFromURI(uri string) []string {
-	var params []string
-	rx := regexp.MustCompile("{([^}]+)}")
-	res := rx.FindAllString(uri, -1)
-	fmt.Println("The res is", res)
-	for _, v := range res {
-		fmt.Println("param", v)
-		v = strings.TrimPrefix(v, "{")
-		v = strings.TrimSuffix(v, "}")
-		params = append(params, v)
+	if !strings.ContainsAny(path, "{}") {
+		return regexp.MustCompile(path)
 	}
 
-	return params
+	path = r.normalizeParamaterizedPath(path)
+
+	rx := regexp.MustCompile("{([^}:]+):?([^}]+)?}")
+	// slice of matches {}
+	// first elem is full match
+	// second elem is the name
+	// third elem is the (optional) regex
+
+	// dont care about first elem
+	// second is appended to the route params
+	res2 := rx.FindAllStringSubmatch(path, -1)
+	fmt.Println("res2 is", res2)
+	for _, v := range res2 {
+		r.params = append(r.params, param{v[1], regexp.MustCompile(v[2])})
+	}
+
+	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<$1>$2)") + "$")
+}
+
+func (r *Route) normalizeParamaterizedPath(path string) string {
+	regex := regexp.MustCompile("{([^:}]+)}")
+
+	return regex.ReplaceAllString(path, "{$1:.+}")
 }
