@@ -9,28 +9,36 @@ import (
 // to a http.Server.
 type Router struct {
 	routes []*Route
-
 	groups []*Group
 }
 
+// New creates a new router instance.
+func New() *Router {
+	return &Router{
+		routes: []*Route{},
+		groups: []*Group{},
+	}
+}
+
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// determine the route and execute it here.
-	route, err := router.findRoute(r.RequestURI, r.Method)
+	route, err := router.findRoute(r)
 
 	if errors.Is(err, MethodNotAllowed{}) {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	if errors.Is(err, RouteNotFound{}) {
-		http.Error(w, "404 — Route not Found", 404)
+		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 
 	route.serve(w, r)
 }
 
-func (router *Router) findRoute(path string, method string) (*Route, error) {
+func (router *Router) findRoute(r *http.Request) (*Route, error) {
+	path := r.RequestURI
+	method := r.Method
 	// TODO: This is very poor, but will do for now.
 	for _, group := range router.groups {
 		for _, route := range group.routes {
@@ -132,12 +140,4 @@ func (router *Router) Group(routes ...*Route) *Group {
 	router.groups = append(router.groups, g)
 
 	return g
-}
-
-// New creates a new router instance.
-func New() *Router {
-	return &Router{
-		routes: []*Route{},
-		groups: []*Group{},
-	}
 }
