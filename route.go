@@ -33,7 +33,7 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 	}
 }
 
-func (route *Route) serve(w http.ResponseWriter, r *http.Request) {
+func (route *Route) Serve(w http.ResponseWriter, r *http.Request) {
 	handler := route.handler
 	for _, m := range route.middleware {
 		handler = m(handler)

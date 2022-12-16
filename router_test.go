@@ -1,57 +1,52 @@
-package router
+package router_test
 
 import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"router"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
+// helloHandler is a simple handler used in tests.
+func helloHandler() string { return "Hello" }
+
 func TestUnregisteredRoutesReturn404(t *testing.T) {
-	server := httptest.NewServer(New())
+	server := httptest.NewServer(router.New())
 	defer server.Close()
 
 	resp, _ := http.Get(server.URL + "/404")
 
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected %d, got %d", http.StatusNotFound, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
 func TestRegisteredRouteCanBeAccessed(t *testing.T) {
-	r := New()
-	r.Get("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello"))
-	}))
+	r := router.New()
+	r.Get("/", helloHandler)
 	server := httptest.NewServer(r)
 	defer server.Close()
 
 	resp, _ := http.Get(server.URL)
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	expected := "Hello"
-	if string(body) != expected {
-		t.Errorf("Expected `%s`, got `%s`", expected, string(body))
-	}
+	assert.Equal(t, []byte("Hello"), body)
 }
 
 func TestRoutesCanOnlyBeAccessedByRegisteredMethods(t *testing.T) {
-	r := New()
-	r.Get("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello"))
-	}))
+	r := router.New()
+	r.Get("/", helloHandler)
 	server := httptest.NewServer(r)
 	defer server.Close()
 
 	resp, _ := http.Post(server.URL, "application/json", nil)
 
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("Expected %d, got %d", http.StatusMethodNotAllowed, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 }
 
 func TestRedirectRoute(t *testing.T) {
-	r := New()
+	r := router.New()
 	r.Redirect("/", "/new")
 	server := httptest.NewServer(r)
 	defer server.Close()
@@ -63,8 +58,5 @@ func TestRedirectRoute(t *testing.T) {
 		}}
 
 	resp, _ := client.Get(server.URL)
-
-	if resp.StatusCode != http.StatusPermanentRedirect {
-		t.Errorf("Expected %d, got %d", http.StatusPermanentRedirect, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusPermanentRedirect, resp.StatusCode)
 }

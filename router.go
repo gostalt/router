@@ -21,9 +21,21 @@ func New() *Router {
 }
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	route, _ := router.findRoute(r)
+	route, err := router.findRoute(r)
 
-	route.serve(w, r)
+	if err != nil {
+		if err.Error() == "route not found" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		if err.Error() == "method not allowed" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+	}
+
+	route.Serve(w, r)
 }
 
 func (router *Router) findRoute(r *http.Request) (*Route, error) {

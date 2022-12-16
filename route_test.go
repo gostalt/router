@@ -1,25 +1,25 @@
-package router
+package router_test
 
 import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"router"
 	"testing"
 )
 
 func TestRouteInference(t *testing.T) {
-	routes := []*Route{
-		NewRoute([]string{http.MethodGet}, "/string", "Test"),
-		NewRoute([]string{http.MethodGet}, "/stringer", stringHandler{}),
-		NewRoute([]string{http.MethodGet}, "/handler", testHandler),
-		NewRoute([]string{http.MethodGet}, "/handler2", testFunc),
+	routes := []*router.Route{
+		router.NewRoute([]string{http.MethodGet}, "/stringer", testStringer),
+		router.NewRoute([]string{http.MethodGet}, "/handler", testHandler),
+		router.NewRoute([]string{http.MethodGet}, "/handler2", testFunc),
 	}
 
 	rr := httptest.NewRecorder()
 
 	for _, rt := range routes {
 		req, _ := http.NewRequest(http.MethodGet, "/", nil)
-		rt.serve(rr, req)
+		rt.Serve(rr, req)
 		body, _ := ioutil.ReadAll(rr.Body)
 		expected := "Test"
 
@@ -36,7 +36,6 @@ func (stringHandler) String() string {
 }
 
 var (
-	testString   = "Test"
 	testStringer = stringHandler{}
 	testHandler  = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Test"))

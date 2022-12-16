@@ -41,8 +41,14 @@ func new__http_HandlerFunc__Handler(fn http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func new__func_http_ResponseWriter_http_Request__Handler(fn func(http.ResponseWriter, *http.Request)) http.Handler {
+	return http.HandlerFunc(fn)
+}
+
 func buildHandler(fn interface{}) http.Handler {
 	switch v := fn.(type) {
+	case func(http.ResponseWriter, *http.Request):
+		return new__func_http_ResponseWriter_http_Request__Handler(v)
 	case http.HandlerFunc:
 		return new__http_HandlerFunc__Handler(v)
 	case http.Handler:
