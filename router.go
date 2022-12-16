@@ -143,7 +143,3 @@ func (router *Router) Fallback(handler interface{}) {
 		w.Write([]byte(response))
 	})
 }
-
-/* Route definition maybe should have a slice of "matchers" - this is where the actual route URI
-would be, as well as methods, etc, etc. Eg gorilla has ability to match on header, scheme, etc.
-*/

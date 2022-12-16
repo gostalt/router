@@ -86,7 +86,7 @@ func TestRouteDispatching(t *testing.T) {
 	})
 	assert.Equal(t, "Hello post", post(server.URL+"/users"))
 
-	router.Get("users/.+", func(req *http.Request) string {
+	router.Get("users/{id}", func(req *http.Request) string {
 		return fmt.Sprintf("Hello %s!", req.Form.Get("id"))
 	})
 	assert.Equal(t, "Hello 30!", get(server.URL+"/users/30"))
