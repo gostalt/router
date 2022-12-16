@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -23,16 +22,7 @@ func (route *Route) Middleware(middleware ...Middleware) *Route {
 
 // NewRoute creates a new route definition for a given method, path and handler.
 func NewRoute(methods []string, path string, handler interface{}) *Route {
-	switch handler.(type) {
-	case string:
-		return newStringRoute(methods, path, handler.(string))
-	case fmt.Stringer:
-		return newStringerRoute(methods, path, handler.(fmt.Stringer))
-	case func(http.ResponseWriter, *http.Request):
-		return newHandlerRoute(methods, path, http.HandlerFunc(handler.(func(http.ResponseWriter, *http.Request))))
-	default:
-		return newHandlerRoute(methods, path, handler.(http.Handler))
-	}
+	return newHandlerRoute(methods, path, buildHandler(handler))
 }
 
 func newHandlerRoute(methods []string, path string, handler http.Handler) *Route {
@@ -41,21 +31,6 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 		path:    path,
 		handler: handler,
 	}
-}
-
-func newStringerRoute(methods []string, path string, handler fmt.Stringer) *Route {
-	f := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(handler.String()))
-	})
-	return newHandlerRoute(methods, path, f)
-}
-
-func newStringRoute(methods []string, path string, response string) *Route {
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(response))
-	})
-
-	return newHandlerRoute(methods, path, h)
 }
 
 func (route *Route) serve(w http.ResponseWriter, r *http.Request) {
@@ -98,8 +73,8 @@ func Options(path string, handler interface{}) *Route {
 }
 
 // Match defines a new route that responds to multiple http verbs.
-func Match(path string, handler interface{}) *Route {
-	return NewRoute([]string{http.MethodOptions}, path, handler)
+func Match(verbs []string, path string, handler interface{}) *Route {
+	return NewRoute(verbs, path, handler)
 }
 
 // Any defines a new route that responds to any http verb.

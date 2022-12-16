@@ -10,13 +10,15 @@ import (
 type Router struct {
 	routes []*Route
 	groups []*Group
+
+	fallback http.Handler
 }
 
 // New creates a new router instance.
 func New() *Router {
 	return &Router{
-		routes: []*Route{},
-		groups: []*Group{},
+		routes: make([]*Route, 0),
+		groups: make([]*Group, 0),
 	}
 }
 
@@ -101,8 +103,8 @@ func (router *Router) Options(path string, handler interface{}) *Route {
 }
 
 // Match defines a new route that responds to multiple http verbs.
-func (router *Router) Match(path string, handler interface{}) *Route {
-	return router.addRoute([]string{http.MethodOptions}, path, handler)
+func (router *Router) Match(verbs []string, path string, handler interface{}) *Route {
+	return router.addRoute(verbs, path, handler)
 }
 
 // Any defines a new route that responds to any http verb.
@@ -141,3 +143,15 @@ func (router *Router) Group(routes ...*Route) *Group {
 
 	return g
 }
+
+func (router *Router) Fallback(handler interface{}) {
+	response := handler.(string)
+
+	router.fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(response))
+	})
+}
+
+/* Route definition maybe should have a slice of "matchers" - this is where the actual route URI
+would be, as well as methods, etc, etc. Eg gorilla has ability to match on header, scheme, etc.
+*/
