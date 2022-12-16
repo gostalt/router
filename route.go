@@ -14,14 +14,9 @@ type Route struct {
 	regex   *regexp.Regexp
 
 	// The {} bits of a route
-	params []param
+	params []string
 
 	middleware []Middleware
-}
-
-type param struct {
-	name  string
-	regex *regexp.Regexp
 }
 
 // Middleware defines additional logic on a single route definition by wrapping the
@@ -146,7 +141,7 @@ func (r *Route) calculateRouteRegex(path string) *regexp.Regexp {
 	rx := regexp.MustCompile("{([^}:]+):?([^}]+)?}")
 	res2 := rx.FindAllStringSubmatch(path, -1)
 	for _, v := range res2 {
-		r.params = append(r.params, param{v[1], regexp.MustCompile(v[2])})
+		r.params = append(r.params, v[1])
 	}
 
 	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<$1>$2)") + "$")

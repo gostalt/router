@@ -47,8 +47,8 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	match := route.Regex().FindStringSubmatch(r.RequestURI)
 	for _, k := range route.params {
-		i := route.Regex().SubexpIndex(k.name)
-		r.Form.Add(k.name, match[i])
+		i := route.Regex().SubexpIndex(k)
+		r.Form.Add(k, match[i])
 	}
 
 	route.Serve(w, r)
