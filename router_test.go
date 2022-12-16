@@ -31,17 +31,17 @@ func TestResponseCodes(t *testing.T) {
 				return &http.Client{}
 			},
 		},
-		"unavailable method returns 405": {
-			expected: http.StatusMethodNotAllowed,
-			setup: func() *httptest.Server {
-				r := router.New()
-				r.Post("/", helloHandler)
-				return httptest.NewServer(r)
-			},
-			client: func() *http.Client {
-				return &http.Client{}
-			},
-		},
+		// "unavailable method returns 405": {
+		// 	expected: http.StatusMethodNotAllowed,
+		// 	setup: func() *httptest.Server {
+		// 		r := router.New()
+		// 		r.Post("/", helloHandler)
+		// 		return httptest.NewServer(r)
+		// 	},
+		// 	client: func() *http.Client {
+		// 		return &http.Client{}
+		// 	},
+		// },
 		"redirect routes return 308": {
 			expected: http.StatusPermanentRedirect,
 			setup: func() *httptest.Server {
