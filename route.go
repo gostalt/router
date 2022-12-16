@@ -26,6 +26,9 @@ func NewRoute(methods []string, path string, handler interface{}) *Route {
 }
 
 func newHandlerRoute(methods []string, path string, handler http.Handler) *Route {
+	if path[0] != '/' {
+		path = "/" + path
+	}
 	return &Route{
 		methods: methods,
 		path:    path,

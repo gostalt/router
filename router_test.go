@@ -1,7 +1,8 @@
 package router_test
 
 import (
-	"io/ioutil"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"router"
@@ -13,50 +14,112 @@ import (
 // helloHandler is a simple handler used in tests.
 func helloHandler() string { return "Hello" }
 
-func TestUnregisteredRoutesReturn404(t *testing.T) {
-	server := httptest.NewServer(router.New())
-	defer server.Close()
+func TestResponseCodes(t *testing.T) {
+	type testcase struct {
+		expected int
+		setup    func() *httptest.Server
+		client   func() *http.Client
+	}
 
-	resp, _ := http.Get(server.URL + "/404")
+	cases := map[string]testcase{
+		"unregistered routes return 404": {
+			expected: http.StatusNotFound,
+			setup: func() *httptest.Server {
+				return httptest.NewServer(router.New())
+			},
+			client: func() *http.Client {
+				return &http.Client{}
+			},
+		},
+		"unavailable method returns 405": {
+			expected: http.StatusMethodNotAllowed,
+			setup: func() *httptest.Server {
+				r := router.New()
+				r.Post("/", helloHandler)
+				return httptest.NewServer(r)
+			},
+			client: func() *http.Client {
+				return &http.Client{}
+			},
+		},
+		"redirect routes return 308": {
+			expected: http.StatusPermanentRedirect,
+			setup: func() *httptest.Server {
+				r := router.New()
+				r.Redirect("/", "/new")
+				return httptest.NewServer(r)
+			},
+			client: func() *http.Client {
+				return &http.Client{
+					CheckRedirect: func(req *http.Request, via []*http.Request) error {
+						return http.ErrUseLastResponse
+					},
+				}
+			},
+		},
+	}
 
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			server := tc.setup()
+			defer server.Close()
+
+			resp, _ := tc.client().Get(server.URL)
+
+			assert.Equal(t, tc.expected, resp.StatusCode)
+		})
+	}
 }
 
-func TestRegisteredRouteCanBeAccessed(t *testing.T) {
-	r := router.New()
-	r.Get("/", helloHandler)
-	server := httptest.NewServer(r)
+func TestRouteDispatching(t *testing.T) {
+	router := router.New()
+	server := httptest.NewServer(router)
 	defer server.Close()
 
-	resp, _ := http.Get(server.URL)
+	router.Get("user/profile", func() string {
+		return "Hello"
+	})
+	assert.Equal(t, "Hello", get(server.URL+"/user/profile"))
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	assert.Equal(t, []byte("Hello"), body)
+	router.Post("users", func() string {
+		return "Hello post"
+	})
+	assert.Equal(t, "Hello post", post(server.URL+"/users"))
+
+	router.Get("users/{id}", func(req *http.Request) string {
+		return fmt.Sprintf("Hello %s!", req.Form.Get("id"))
+	})
+	assert.Equal(t, "Hello 30", get(server.URL+"/users/30"))
 }
 
-func TestRoutesCanOnlyBeAccessedByRegisteredMethods(t *testing.T) {
-	r := router.New()
-	r.Get("/", helloHandler)
-	server := httptest.NewServer(r)
-	defer server.Close()
+// get is a convenience method that fires off a GET request and assumes a positive
+// response with no errors. If errors occur, a panic is thrown.
+func get(uri string) string {
+	resp, err := http.Get(uri)
+	if err != nil {
+		panic(err)
+	}
 
-	resp, _ := http.Post(server.URL, "application/json", nil)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
 
-	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+	return string(body)
 }
 
-func TestRedirectRoute(t *testing.T) {
-	r := router.New()
-	r.Redirect("/", "/new")
-	server := httptest.NewServer(r)
-	defer server.Close()
+// post is a convenience method that fires off a POST request and assumes a positive
+// response with no errors. If errors occur, a panic is thrown.
+func post(uri string) string {
+	resp, err := http.Post(uri, "text/plain", nil)
+	if err != nil {
+		panic(err)
+	}
 
-	// Prevent redirects from occuring, so we can check the status code of the request.
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		}}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
 
-	resp, _ := client.Get(server.URL)
-	assert.Equal(t, http.StatusPermanentRedirect, resp.StatusCode)
+	return string(body)
 }

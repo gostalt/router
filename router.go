@@ -26,11 +26,13 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == "route not found" {
 			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("404 not found"))
 			return
 		}
 
 		if err.Error() == "method not allowed" {
 			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.Write([]byte("405 method not allowed"))
 			return
 		}
 	}
