@@ -136,9 +136,42 @@ func (router *Router) Redirect(from string, to string) *Route {
 
 func (router *Router) addRoute(methods []string, path string, handler interface{}) *Route {
 	r := NewRoute(methods, path, handler)
-	router.routes = append(router.routes, r)
+
+	i, ok := router.findExistingRoute(r)
+	// If the route already exists, replace it.
+	if ok {
+		router.routes[i] = r
+	} else {
+		router.routes = append(router.routes, r)
+	}
 
 	return r
+}
+
+// findExistingRoute checks the router to determine if a given route already exists.
+// If so, the index is returned along with `true`. Otherwise -1, false.
+func (router *Router) findExistingRoute(route *Route) (int, bool) {
+	for i, r := range router.routes {
+		if r.path == route.path && methodsMatch(r, route) {
+			return i, true
+		}
+	}
+
+	return -1, false
+}
+
+func methodsMatch(routeA *Route, routeB *Route) bool {
+	if len(routeA.methods) != len(routeB.methods) {
+		return false
+	}
+
+	for i, v := range routeA.methods {
+		if v != routeB.methods[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (router *Router) Group(routes ...*Route) *Group {

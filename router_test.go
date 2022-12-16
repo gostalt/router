@@ -96,6 +96,18 @@ func TestRouteDispatching(t *testing.T) {
 		})
 		assert.Equal(t, "Hello 30 on post 28!", get(server.URL+"/users/30/posts/28"))
 	})
+
+	t.Run("duplicate records uses last registered", func(t *testing.T) {
+		router.Get("duplicate", func() string {
+			return "first"
+		})
+
+		router.Get("duplicate", func() string {
+			return "second"
+		})
+
+		assert.Equal(t, "second", get(server.URL+"/duplicate"))
+	})
 }
 
 // get is a convenience method that fires off a GET request and assumes a positive
