@@ -33,7 +33,7 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 	}
 
 	// TODO: Hardcoded for now
-	regex := regexp.MustCompile("/users/.+")
+	regex := calculateRouteRegex(path)
 
 	return &Route{
 		methods: methods,
@@ -111,11 +111,13 @@ func Redirect(from string, to string) *Route {
 
 // matches determines if the route matches the incoming request.
 func (r *Route) matches(router *Router, req *http.Request) bool {
-	// validators are things like method, and path.
-	// foreach validator ...
-	// if validator doesn't match, return false
-	// else true
-	return false
+	for _, v := range router.validators {
+		if !v.Matches(r, req) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *Route) Methods() []string {
@@ -124,4 +126,8 @@ func (r *Route) Methods() []string {
 
 func (r *Route) Regex() *regexp.Regexp {
 	return r.regex
+}
+
+func calculateRouteRegex(path string) *regexp.Regexp {
+	return regexp.MustCompile(path)
 }
