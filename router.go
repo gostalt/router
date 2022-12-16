@@ -6,8 +6,9 @@ import (
 )
 
 type Router struct {
-	routes []*Route
-	groups []*Group
+	routes     []*Route
+	groups     []*Group
+	validators []Validator
 
 	fallback http.Handler
 }
@@ -17,6 +18,9 @@ func New() *Router {
 	return &Router{
 		routes: make([]*Route, 0),
 		groups: make([]*Group, 0),
+		validators: []Validator{
+			URI{}, Method{},
+		},
 	}
 }
 
@@ -41,33 +45,19 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (router *Router) findRoute(r *http.Request) (*Route, error) {
-	path := r.RequestURI
-	method := r.Method
 	// TODO: This is very poor, but will do for now.
 	for _, group := range router.groups {
 		for _, route := range group.routes {
-			if group.prefix+route.path == path {
-				for _, m := range route.methods {
-					if m == method {
-						route.Middleware(group.middleware...)
-						return route, nil
-					}
-				}
-
-				return &Route{}, errors.New("method not allowed")
+			if route.matches(router, r) {
+				route.Middleware(group.middleware...)
+				return route, nil
 			}
 		}
 	}
 
 	for _, route := range router.routes {
-		if route.path == path {
-			for _, m := range route.methods {
-				if m == method {
-					return route, nil
-				}
-			}
-
-			return &Route{}, errors.New("method not allowed")
+		if route.matches(router, r) {
+			return route, nil
 		}
 	}
 

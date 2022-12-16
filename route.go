@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"regexp"
 )
 
 // Route is a single entrypoint into the router.
@@ -9,6 +10,7 @@ type Route struct {
 	methods []string
 	path    string
 	handler http.Handler
+	regex   *regexp.Regexp
 
 	middleware []Middleware
 }
@@ -29,10 +31,15 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 	if path[0] != '/' {
 		path = "/" + path
 	}
+
+	// TODO: Hardcoded for now
+	regex := regexp.MustCompile("/users/.+")
+
 	return &Route{
 		methods: methods,
 		path:    path,
 		handler: handler,
+		regex:   regex,
 	}
 }
 
@@ -100,4 +107,21 @@ func Redirect(from string, to string) *Route {
 	}
 
 	return NewRoute([]string{http.MethodGet}, from, redirect)
+}
+
+// matches determines if the route matches the incoming request.
+func (r *Route) matches(router *Router, req *http.Request) bool {
+	// validators are things like method, and path.
+	// foreach validator ...
+	// if validator doesn't match, return false
+	// else true
+	return false
+}
+
+func (r *Route) Methods() []string {
+	return r.methods
+}
+
+func (r *Route) Regex() *regexp.Regexp {
+	return r.regex
 }
