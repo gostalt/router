@@ -3,70 +3,72 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 )
 
-// new__func_ret_string__Handler returns a valid http.Handler from a function that
-// matches the following signature:
+// handlerTransformers is a package-level variable that contains a map between
+// function signatures and the function declaration used to turn a provided route
+// resolver into a valid http.Handler. This value is used at the point of
+// building a handler for a newly registered route.
 //
-//	func() string
-func new__func_ret_string__Handler(fn func() string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(fn()))
-	})
-}
+// See `handler_defaults.go` for examples of "standard" transformers.
+var handlerTransformers = make(map[string]interface{})
 
-// new__func_http_Request_ret_string__Handler returns a valid http.Handler from a
-// function that matches the following signature:
-//
-//	func(*http.Request) string
-func new__func_http_Request_ret_string__Handler(fn func(*http.Request) string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(fn(r)))
-	})
-}
-
-// new__Stringer__Handler returns a valid http.Handler from a value that satisfies
-// the fmt.Stringer interface, that is:
-//
-//	type Stringer interface {
-//		String() string
-//	}
-func new__Stringer__Handler(fn fmt.Stringer) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(fn.String()))
-	})
-}
-
-func new__http_HandlerFunc__Handler(fn http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(fn)
-}
-
-func new__func_http_ResponseWriter_http_Request__Handler(fn func(http.ResponseWriter, *http.Request)) http.Handler {
-	return http.HandlerFunc(fn)
-}
-
-func buildHandler(fn interface{}) http.Handler {
-	switch v := fn.(type) {
-	case func(http.ResponseWriter, *http.Request):
-		return new__func_http_ResponseWriter_http_Request__Handler(v)
-	case http.HandlerFunc:
-		return new__http_HandlerFunc__Handler(v)
-	case http.Handler:
-		return v
-	case func() string:
-		return new__func_ret_string__Handler(v)
-	case func(*http.Request) string:
-		return new__func_http_Request_ret_string__Handler(v)
-	case fmt.Stringer:
-		return new__Stringer__Handler(v)
-	default:
-		return makeFailedHandler(v)
+func init() {
+	for _, h := range defaultHandlers {
+		AddHandlerTransformer(h)
 	}
 }
 
-func makeFailedHandler(handler interface{}) http.HandlerFunc {
-	msg := fmt.Sprintf("Unable to create handler for type %T", handler)
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(msg))
+// AddHandlerTransformer adds the provided transformer function to the router,
+// enabling routes to be registered that match the given signature.
+//
+// Note, the expected signature of `fn` is:
+//
+//	func(v interface{}) http.Handler
+func AddHandlerTransformer(fn interface{}) error {
+	t := reflect.TypeOf(fn)
+	if err := validateHandlerTransformer(t); err != nil {
+		return err
 	}
+
+	// Get the type of the first (and only) parameter to `fn`. This will be the
+	// signature of any route resolvers that are added to the router.
+	sig := t.In(0).String()
+	if _, ok := handlerTransformers[sig]; ok {
+		return fmt.Errorf("handler signature `%s` already exists, transformer not added", sig)
+	}
+
+	handlerTransformers[sig] = fn
+	return nil
+}
+
+// buildHandler dynamically creates an http.Handler based on the function signature
+// of the passed in function `fn`.
+func buildHandler(v interface{}) http.Handler {
+	// Retrieve the of the function from the transformer map.
+	t := fmt.Sprintf("%T", v)
+	f := reflect.ValueOf(handlerTransformers[t])
+
+	// Reflect the value of `fn` and use it as the argument for the transformer
+	// function. Return the value coerced to an http.Handler.
+	in := []reflect.Value{reflect.ValueOf(v)}
+	handler, ok := f.Call(in)[0].Interface().(http.Handler)
+	if !ok {
+		panic(fmt.Sprintf("expected http.Handler return type, got %T", v))
+	}
+
+	return handler
+}
+
+func validateHandlerTransformer(t reflect.Type) error {
+	if t.Kind() != reflect.Func {
+		return fmt.Errorf("handler must be a func matching the following signature: func(sig interface{}) http.Handler, got: %s", t.Kind())
+	}
+
+	if t.NumIn() != 1 {
+		return fmt.Errorf("handler func must have a single (1) parameter, got %d", t.NumIn())
+	}
+
+	return nil
 }
