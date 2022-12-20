@@ -1,0 +1,27 @@
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - cyclop
+    - errname
+    - errorlint
+    - funlen
+    - gofumpt
+    - goimports
+    - lll
+linters-settings:
+  cyclop:
+    max-complexity: 8
+  lll:
+    line-length: 100
+issues:
+  exclude-rules:
+    - linters:
+        - errcheck
+      text: "Error return value of `w.Write` is not checked"

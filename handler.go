@@ -7,16 +7,18 @@ import (
 )
 
 // handlerTransformers is a package-level variable that contains a map between
-// function signatures and the function declaration used to turn a provided route
-// resolver into a valid http.Handler. This value is used at the point of
-// building a handler for a newly registered route.
+// function signatures and the function declaration used to turn a provided
+// route resolver into a valid http.Handler. This value is used at the point
+// of building a handler for a newly registered route.
 //
 // See `handler_defaults.go` for examples of "standard" transformers.
 var handlerTransformers = make(map[string]interface{})
 
 func init() {
 	for _, h := range defaultHandlers {
-		AddHandlerTransformer(h)
+		if err := AddHandlerTransformer(h); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -63,7 +65,8 @@ func buildHandler(v interface{}) http.Handler {
 
 func validateHandlerTransformer(t reflect.Type) error {
 	if t.Kind() != reflect.Func {
-		return fmt.Errorf("handler must be a func matching the following signature: func(sig interface{}) http.Handler, got: %s", t.Kind())
+		return fmt.Errorf(
+			"handler must be of type: func(sig interface{}) http.Handler, got: %s", t.Kind())
 	}
 
 	if t.NumIn() != 1 {

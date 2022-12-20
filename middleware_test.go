@@ -24,7 +24,11 @@ func twoMiddleware(next http.Handler) http.Handler {
 }
 
 func TestCanAddMiddlewareToRoute(t *testing.T) {
-	r := router.NewRoute([]string{http.MethodGet}, "/", helloHandler).Middleware(oneMiddleware, twoMiddleware)
+	r := router.NewRoute(
+		[]string{http.MethodGet},
+		"/",
+		helloHandler,
+	).Middleware(oneMiddleware, twoMiddleware)
 
 	req, _ := http.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()

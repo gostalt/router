@@ -26,7 +26,6 @@ func New() *Router {
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	route, err := router.findRoute(r)
-
 	if err != nil {
 		if err.Error() == "route not found" {
 			w.WriteHeader(http.StatusNotFound)
