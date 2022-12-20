@@ -1,4 +1,4 @@
-module router
+module github.com/gostalt/router
 
 go 1.13
 

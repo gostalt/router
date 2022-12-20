@@ -3,10 +3,10 @@ package router_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"router"
 	"strconv"
 	"testing"
 
+	"github.com/gostalt/router"
 	"github.com/stretchr/testify/assert"
 )
 

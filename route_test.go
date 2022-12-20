@@ -4,8 +4,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"router"
 	"testing"
+
+	"github.com/gostalt/router"
 )
 
 func TestRouteInference(t *testing.T) {

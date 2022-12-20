@@ -5,9 +5,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"router"
 	"testing"
 
+	"github.com/gostalt/router"
 	"github.com/stretchr/testify/assert"
 )
 
