@@ -11,7 +11,7 @@ import (
 )
 
 func TestCanRegisterCustomHandlerTransformer(t *testing.T) {
-	router.AddHandlerTransformer("func() int", func(fn func() int) http.Handler {
+	router.AddHandlerTransformer(func(fn func() int) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			str := strconv.Itoa(fn())
 			w.Write([]byte(str))
