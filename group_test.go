@@ -12,8 +12,10 @@ import (
 func TestFindRoutesInGroups(t *testing.T) {
 	r := router.New()
 	r.Group(
-		router.Get("/test", "Test"),
-	).Prefix("/group")
+		router.Get("test", func() string {
+			return "Test"
+		}),
+	).Prefix("group")
 
 	server := httptest.NewServer(r)
 	defer server.Close()
