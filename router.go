@@ -11,6 +11,8 @@ type Router struct {
 	validators []Validator
 
 	fallback http.Handler
+
+	middleware []Middleware
 }
 
 // New creates a new router instance.
@@ -58,7 +60,11 @@ func (router *Router) findRoute(r *http.Request) (*Route, error) {
 	for _, group := range router.groups {
 		for _, route := range group.routes {
 			if route.matches(router, r) {
-				route.Middleware(group.middleware...)
+				// TODO: Improve this (wrap and sort at point of registration) and add test coverage
+				mw := group.middleware
+				mw = append(mw, router.middleware...)
+				mw = append(mw, route.middleware...)
+				route.middleware = mw
 				return route, nil
 			}
 		}
@@ -184,4 +190,8 @@ func (router *Router) Fallback(handler interface{}) {
 	router.fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(response))
 	})
+}
+
+func (router *Router) Middleware(fns ...Middleware) {
+	router.middleware = append(router.middleware, fns...)
 }
