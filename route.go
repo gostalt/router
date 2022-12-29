@@ -18,6 +18,8 @@ type Route struct {
 
 	group *Group
 
+	router *Router
+
 	middleware []Middleware
 }
 
@@ -50,7 +52,16 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 
 func (route *Route) Serve(w http.ResponseWriter, r *http.Request) {
 	handler := route.handler
-	for _, m := range route.middleware {
+	var mw []Middleware
+	mw = append(mw, route.middleware...)
+	if route.group != nil {
+		mw = append(mw, route.group.middleware...)
+	}
+
+	if route.router != nil {
+		mw = append(mw, route.router.middleware...)
+	}
+	for _, m := range mw {
 		handler = m(handler)
 	}
 

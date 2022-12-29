@@ -60,11 +60,6 @@ func (router *Router) findRoute(r *http.Request) (*Route, error) {
 	for _, group := range router.groups {
 		for _, route := range group.routes {
 			if route.matches(router, r) {
-				// TODO: Improve this (wrap and sort at point of registration) and add test coverage
-				mw := group.middleware
-				mw = append(mw, router.middleware...)
-				mw = append(mw, route.middleware...)
-				route.middleware = mw
 				return route, nil
 			}
 		}
@@ -147,6 +142,8 @@ func (router *Router) addRoute(methods []string, path string, handler interface{
 		router.routes = append(router.routes, r)
 	}
 
+	r.router = router
+
 	return r
 }
 
@@ -178,6 +175,10 @@ func methodsMatch(routeA *Route, routeB *Route) bool {
 
 func (router *Router) Group(routes ...*Route) *Group {
 	g := NewGroup(routes...)
+
+	for _, route := range routes {
+		route.router = router
+	}
 
 	router.groups = append(router.groups, g)
 
