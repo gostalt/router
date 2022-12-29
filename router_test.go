@@ -71,6 +71,20 @@ func TestResponseCodes(t *testing.T) {
 	}
 }
 
+func TestEmptyRouteIsNotCatchall(t *testing.T) {
+	router := router.New()
+	router.Get("/", func() string {
+		return "hello"
+	})
+
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	resp, _ := http.Get(server.URL + "/nonexistant")
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
 func TestRouteDispatching(t *testing.T) {
 	router := router.New()
 	server := httptest.NewServer(router)

@@ -7,14 +7,28 @@ type Group struct {
 	middleware []Middleware
 }
 
-func NewGroup(routes ...*Route) *Group {
-	return &Group{
-		routes: routes,
+func (g *Group) calculateRouteRegexs() {
+	for _, r := range g.routes {
+		r.regex = r.calculateRouteRegex()
 	}
+}
+
+func NewGroup(routes ...*Route) *Group {
+	g := &Group{}
+
+	for _, r := range routes {
+		r.group = g
+		g.calculateRouteRegexs()
+	}
+
+	g.routes = routes
+
+	return g
 }
 
 func (g *Group) Prefix(path string) *Group {
 	g.prefix = path
+	g.calculateRouteRegexs()
 	return g
 }
 

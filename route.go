@@ -16,6 +16,8 @@ type Route struct {
 	// The {} bits of a route
 	params []string
 
+	group *Group
+
 	middleware []Middleware
 }
 
@@ -42,7 +44,7 @@ func newHandlerRoute(methods []string, path string, handler http.Handler) *Route
 		handler: handler,
 	}
 
-	r.regex = r.calculateRouteRegex(path)
+	r.regex = r.calculateRouteRegex()
 	return r
 }
 
@@ -131,20 +133,28 @@ func (r *Route) Regex() *regexp.Regexp {
 	return r.regex
 }
 
-func (r *Route) calculateRouteRegex(path string) *regexp.Regexp {
-	if !strings.ContainsAny(path, "{}") {
-		return regexp.MustCompile(path)
+func (r *Route) calculateRouteRegex() *regexp.Regexp {
+	fullURI := r.path
+	if r.group != nil {
+		fullURI = strings.Join([]string{r.group.prefix, r.path}, "")
+		if fullURI[0] != '/' {
+			fullURI = "/" + fullURI
+		}
 	}
 
-	path = r.normalizeParamaterizedPath(path)
+	if !strings.ContainsAny(fullURI, "{}") {
+		return regexp.MustCompile("^" + fullURI + "$")
+	}
+
+	r.path = r.normalizeParamaterizedPath(r.path)
 
 	rx := regexp.MustCompile("{([^}:]+):?([^}]+)?}")
-	res2 := rx.FindAllStringSubmatch(path, -1)
+	res2 := rx.FindAllStringSubmatch(r.path, -1)
 	for _, v := range res2 {
 		r.params = append(r.params, v[1])
 	}
 
-	return regexp.MustCompile(rx.ReplaceAllString(path, "(?P<$1>$2)") + "$")
+	return regexp.MustCompile("^" + rx.ReplaceAllString(r.path, "(?P<$1>$2)") + "$")
 }
 
 func (r *Route) normalizeParamaterizedPath(path string) string {
