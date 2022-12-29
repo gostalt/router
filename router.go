@@ -61,9 +61,14 @@ func (router *Router) findRoute(r *http.Request) (*Route, error) {
 		for _, route := range group.routes {
 			if route.matches(router, r) {
 				// TODO: Improve this (wrap and sort at point of registration) and add test coverage
-				mw := group.middleware
-				mw = append(mw, router.middleware...)
+				// middleware is executed global > group > route
+				// FIX: This should only happen once, happens multiple times currently.
+				// because route middleware is spread and then appended to again.
+				// either make stateless or mark once the route has been processed and skip it.
+				var mw []Middleware
 				mw = append(mw, route.middleware...)
+				mw = append(mw, group.middleware...)
+				mw = append(mw, router.middleware...)
 				route.middleware = mw
 				return route, nil
 			}
@@ -72,6 +77,10 @@ func (router *Router) findRoute(r *http.Request) (*Route, error) {
 
 	for _, route := range router.routes {
 		if route.matches(router, r) {
+			var mw []Middleware
+			mw = append(mw, route.middleware...)
+			mw = append(mw, router.middleware...)
+			route.middleware = mw
 			return route, nil
 		}
 	}
