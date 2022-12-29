@@ -123,3 +123,25 @@ func TestMiddlewareExecutionOrder(t *testing.T) {
 		t.Errorf("Got %s, wanted %s.", string(body), expected)
 	}
 }
+
+func TestMiddlewareDoesntDuplicate(t *testing.T) {
+	r := router.New()
+	r.Middleware(oneMiddleware)
+	r.Get("middleware", func() string {
+		return "middleware"
+	}).Middleware(twoMiddleware)
+
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	resp, _ := http.Get(server.URL + "/middleware")
+	resp, _ = http.Get(server.URL + "/middleware")
+	resp, _ = http.Get(server.URL + "/middleware")
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	expected := "12middleware"
+
+	if string(body) != expected {
+		t.Errorf("Got %s, wanted %s.", string(body), expected)
+	}
+}
