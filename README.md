@@ -60,8 +60,21 @@ signature:
 
 ```go
 func(http.Handler) http.Handler
+```
 
-r.Get("profile", profileHandler).Middleware(MustBeAuthenticated)
+Middleware registered against the router executes first, followed by middleware
+on the group and finally middleware on the specific route definition.
+
+In the following code snippet, the middleware would be executed `one`, `two` and
+finally `three`, before calling the route's handler:
+
+```go
+rtr := router.New()
+rtr.Middleware(one)
+
+rtr.Group(
+    router.Get("/", handler).Middleware(three)
+).Middleware(two)
 ```
 
 ### Redirect Routes
