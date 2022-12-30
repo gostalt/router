@@ -73,5 +73,13 @@ func validateHandlerTransformer(t reflect.Type) error {
 		return fmt.Errorf("handler func must have a single (1) parameter, got %d", t.NumIn())
 	}
 
+	if t.NumOut() != 1 {
+		return fmt.Errorf("handler func must have a single (1) return value, got %d", t.NumOut())
+	}
+
+	if t.Out(0).String() != "http.Handler" {
+		return fmt.Errorf("transformer must return an http.Handler")
+	}
+
 	return nil
 }

@@ -1,10 +1,10 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 )
 
+// defaultHandlers define the preconfigured transformers for the Router.
 var defaultHandlers = []interface{}{
 	func(fn func() string) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -14,11 +14,6 @@ var defaultHandlers = []interface{}{
 	func(fn func(*http.Request) string) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(fn(r)))
-		})
-	},
-	func(fn fmt.Stringer) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(fn.String()))
 		})
 	},
 	func(fn http.HandlerFunc) http.Handler {
