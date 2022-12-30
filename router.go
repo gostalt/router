@@ -11,11 +11,11 @@ type Router struct {
 	validators []Validator
 
 	fallback http.Handler
-
+	// middleware are handlers that wrap all route definitions on this router instance.
 	middleware []Middleware
 }
 
-// New creates a new router instance.
+// New creates a new Router instance.
 func New() *Router {
 	return &Router{
 		routes: make([]*Route, 0),
@@ -56,7 +56,6 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (router *Router) findRoute(r *http.Request) (*Route, error) {
-	// TODO: This is very poor, but will do for now.
 	for _, group := range router.groups {
 		for _, route := range group.routes {
 			if route.matches(router, r) {
@@ -109,7 +108,7 @@ func (router *Router) Match(verbs []string, path string, handler interface{}) *R
 	return router.addRoute(verbs, path, handler)
 }
 
-// Any defines a new route that responds to any http verb.
+// Any creates a new route definition that responds to any HTTP verb.
 func (router *Router) Any(path string, handler interface{}) *Route {
 	verbs := []string{
 		http.MethodGet,
@@ -123,6 +122,8 @@ func (router *Router) Any(path string, handler interface{}) *Route {
 	return router.addRoute(verbs, path, handler)
 }
 
+// Redirect creates a new route definition that redirects from the `from` URI to
+// the `to` URI. The redirect uses the Permanent Redirect status code 308.
 func (router *Router) Redirect(from string, to string) *Route {
 	redirect := func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, to, http.StatusPermanentRedirect)
@@ -147,8 +148,9 @@ func (router *Router) addRoute(methods []string, path string, handler interface{
 	return r
 }
 
-// findExistingRoute checks the router to determine if a given route already exists.
-// If so, the index is returned along with `true`. Otherwise -1, false.
+// findExistingRoute checks the Router instance to determine if a route definition
+// already exists for the given URI and methods. If so, the index is returned,
+// along with true. Otherwise -1, false.
 func (router *Router) findExistingRoute(route *Route) (int, bool) {
 	for i, r := range router.routes {
 		if r.path == route.path && methodsMatch(r, route) {
@@ -173,6 +175,7 @@ func methodsMatch(routeA *Route, routeB *Route) bool {
 	return true
 }
 
+// Group creates a new route Group for the Router instance.
 func (router *Router) Group(routes ...*Route) *Group {
 	g := NewGroup(routes...)
 
@@ -185,14 +188,22 @@ func (router *Router) Group(routes ...*Route) *Group {
 	return g
 }
 
-func (router *Router) Fallback(handler interface{}) {
+// Fallback defines a "default" route for the Router instance. If a visited URI
+// does not have a corresponding route definition, the Fallback handler is
+// called for the request.
+func (router *Router) Fallback(handler interface{}) *Router {
+	// TODO: Implement this.
 	response := handler.(string)
 
 	router.fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(response))
 	})
+
+	return router
 }
 
-func (router *Router) Middleware(fns ...Middleware) {
+// Middleware appends the given middleware `fns` to the Router instance.
+func (router *Router) Middleware(fns ...Middleware) *Router {
 	router.middleware = append(router.middleware, fns...)
+	return router
 }
