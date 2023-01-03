@@ -38,8 +38,25 @@ func (g *Group) Middleware(middleware ...Middleware) *Group {
 }
 
 func (g *Group) Add(routes ...*Route) *Group {
-	g.routes = append(g.routes, routes...)
+	for _, r := range routes {
+		i, found := g.findExistingRoute(r)
+		if found {
+			g.routes[i] = r
+		} else {
+			g.routes = append(g.routes, r)
+		}
+	}
 	return g
+}
+
+func (g *Group) findExistingRoute(route *Route) (int, bool) {
+	for i, r := range g.routes {
+		if r.path == route.path && methodsMatch(r, route) {
+			return i, true
+		}
+	}
+
+	return -1, false
 }
 
 func (g *Group) Routes() []*Route {

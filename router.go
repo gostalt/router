@@ -6,8 +6,9 @@ import (
 )
 
 type Router struct {
-	routes     []*Route
-	groups     []*Group
+	groups       []*Group
+	defaultGroup *Group
+
 	validators []Validator
 
 	fallback http.Handler
@@ -17,9 +18,10 @@ type Router struct {
 
 // New creates a new Router instance.
 func New() *Router {
+	def := NewGroup()
 	return &Router{
-		routes: make([]*Route, 0),
-		groups: make([]*Group, 0),
+		groups:       []*Group{def},
+		defaultGroup: def,
 		validators: []Validator{
 			URI{}, Method{},
 		},
@@ -61,12 +63,6 @@ func (router *Router) findRoute(r *http.Request) (*Route, error) {
 			if route.matches(router, r) {
 				return route, nil
 			}
-		}
-	}
-
-	for _, route := range router.routes {
-		if route.matches(router, r) {
-			return route, nil
 		}
 	}
 
@@ -135,30 +131,11 @@ func (router *Router) Redirect(from string, to string) *Route {
 func (router *Router) addRoute(methods []string, path string, handler interface{}) *Route {
 	r := NewRoute(methods, path, handler)
 
-	i, ok := router.findExistingRoute(r)
-	// If the route already exists, replace it.
-	if ok {
-		router.routes[i] = r
-	} else {
-		router.routes = append(router.routes, r)
-	}
+	router.defaultGroup.Add(r)
 
 	r.router = router
 
 	return r
-}
-
-// findExistingRoute checks the Router instance to determine if a route definition
-// already exists for the given URI and methods. If so, the index is returned,
-// along with true. Otherwise -1, false.
-func (router *Router) findExistingRoute(route *Route) (int, bool) {
-	for i, r := range router.routes {
-		if r.path == route.path && methodsMatch(r, route) {
-			return i, true
-		}
-	}
-
-	return -1, false
 }
 
 func methodsMatch(routeA *Route, routeB *Route) bool {
@@ -191,14 +168,8 @@ func (router *Router) Group(routes ...*Route) *Group {
 // Fallback defines a "default" route for the Router instance. If a visited URI
 // does not have a corresponding route definition, the Fallback handler is
 // called for the request.
-func (router *Router) Fallback(handler interface{}) *Router {
-	// TODO: Implement this.
-	response := handler.(string)
-
-	router.fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(response))
-	})
-
+func (router *Router) Fallback(handler http.Handler) *Router {
+	router.fallback = handler
 	return router
 }
 
