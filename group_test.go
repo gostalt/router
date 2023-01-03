@@ -20,7 +20,10 @@ func TestFindRoutesInGroups(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	resp, _ := http.Get(server.URL + "/group/test")
+	resp, err := http.Get(server.URL + "/group/test")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected %d, got %d", http.StatusOK, resp.StatusCode)
@@ -28,10 +31,11 @@ func TestFindRoutesInGroups(t *testing.T) {
 }
 
 func TestGroupCanAddRoute(t *testing.T) {
-	group := router.NewGroup()
+	rtr := router.New()
+	group := rtr.Group()
 
 	group.Add(
-		router.NewRoute([]string{http.MethodGet}, "/", func() string { return "Hello" }),
+		router.Get("/", func() string { return "Hello" }),
 	)
 
 	assert.Equal(t, 1, len(group.Routes()))

@@ -4,6 +4,8 @@ type Group struct {
 	prefix string
 	routes []*Route
 
+	router *Router
+
 	middleware []Middleware
 }
 
@@ -13,11 +15,11 @@ func (g *Group) calculateRouteRegexs() {
 	}
 }
 
-func NewGroup(routes ...*Route) *Group {
-	g := &Group{}
+func newGroup(router *Router, routes ...*Route) *Group {
+	g := &Group{router: router}
 
 	for _, r := range routes {
-		r.group = g
+		g.Add(r)
 		g.calculateRouteRegexs()
 	}
 
@@ -45,6 +47,9 @@ func (g *Group) Add(routes ...*Route) *Group {
 		} else {
 			g.routes = append(g.routes, r)
 		}
+
+		r.group = g
+		r.buildHandler()
 	}
 	return g
 }

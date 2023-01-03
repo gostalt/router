@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -14,18 +15,32 @@ type Router struct {
 	fallback http.Handler
 	// middleware are handlers that wrap all route definitions on this router instance.
 	middleware []Middleware
+
+	transformers map[string]interface{}
 }
 
 // New creates a new Router instance.
 func New() *Router {
-	def := NewGroup()
-	return &Router{
-		groups:       []*Group{def},
-		defaultGroup: def,
+	rtr := &Router{
 		validators: []Validator{
 			URI{}, Method{},
 		},
+		transformers: map[string]interface{}{},
 	}
+
+	def := newGroup(rtr)
+	rtr.defaultGroup = def
+	rtr.groups = []*Group{def}
+
+	for _, h := range defaultHandlers {
+		if err := rtr.AddHandlerTransformer(h); err != nil {
+			panic(err)
+		}
+	}
+
+	fmt.Println("There are x transformers", len(rtr.transformers))
+
+	return rtr
 }
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +169,7 @@ func methodsMatch(routeA *Route, routeB *Route) bool {
 
 // Group creates a new route Group for the Router instance.
 func (router *Router) Group(routes ...*Route) *Group {
-	g := NewGroup(routes...)
+	g := newGroup(router, routes...)
 
 	for _, route := range routes {
 		route.router = router

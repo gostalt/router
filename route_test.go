@@ -10,24 +10,31 @@ import (
 )
 
 func TestRouteInference(t *testing.T) {
-	routes := []*router.Route{
-		// TODO: Fix the stringer implementation
-		// router.NewRoute([]string{http.MethodGet}, "/", testStringer),
-		router.NewRoute([]string{http.MethodGet}, "/", testHandler),
-		router.NewRoute([]string{http.MethodGet}, "/", testFunc),
+	rtr := router.New()
+	rtr.Get("/handler", testHandler)
+	rtr.Get("func", testFunc)
+
+	server := httptest.NewServer(rtr)
+	defer server.Close()
+
+	resp, err := http.Get(server.URL + "/handler")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	expected := "handler"
+	if string(body) != expected {
+		t.Errorf("Got %s, wanted %s.", string(body), expected)
 	}
 
-	rr := httptest.NewRecorder()
-
-	for _, rt := range routes {
-		req, _ := http.NewRequest(http.MethodGet, "/", nil)
-		rt.Serve(rr, req)
-		body, _ := ioutil.ReadAll(rr.Body)
-		expected := "Test"
-
-		if string(body) != expected {
-			t.Errorf("Got %s, wanted %s.", string(body), expected)
-		}
+	resp, err = http.Get(server.URL + "/func")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ = ioutil.ReadAll(resp.Body)
+	expected = "func"
+	if string(body) != expected {
+		t.Errorf("Got %s, wanted %s.", string(body), expected)
 	}
 }
 
@@ -40,9 +47,9 @@ func (stringHandler) String() string {
 var (
 	testStringer = stringHandler{}
 	testHandler  = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Test"))
+		w.Write([]byte("handler"))
 	})
 	testFunc = func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Test"))
+		w.Write([]byte("func"))
 	}
 )
