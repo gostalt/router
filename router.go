@@ -2,7 +2,6 @@ package router
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -37,8 +36,6 @@ func New() *Router {
 			panic(err)
 		}
 	}
-
-	fmt.Println("There are x transformers", len(rtr.transformers))
 
 	return rtr
 }
