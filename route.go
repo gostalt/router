@@ -10,8 +10,12 @@ import (
 type Route struct {
 	methods []string
 	path    string
-	handler http.Handler
-	regex   *regexp.Regexp
+	// rawHandler is the handler provided to the route as-is, i.e., before it has
+	// been transformed into an http.Handler
+	rawHandler interface{}
+	handler    http.Handler
+
+	regex *regexp.Regexp
 
 	// The {} bits of a route
 	params []string
@@ -32,18 +36,18 @@ func (route *Route) Middleware(middleware ...Middleware) *Route {
 
 // NewRoute creates a new route definition for a given method, path and handler.
 func NewRoute(methods []string, path string, handler interface{}) *Route {
-	return newHandlerRoute(methods, path, buildHandler(handler))
+	return newHandlerRoute(methods, path, handler)
 }
 
-func newHandlerRoute(methods []string, path string, handler http.Handler) *Route {
+func newHandlerRoute(methods []string, path string, handler interface{}) *Route {
 	if path[0] != '/' {
 		path = "/" + path
 	}
 
 	r := &Route{
-		methods: methods,
-		path:    path,
-		handler: handler,
+		methods:    methods,
+		path:       path,
+		rawHandler: handler,
 	}
 
 	r.regex = r.calculateRouteRegex()
@@ -66,6 +70,10 @@ func (route *Route) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler.ServeHTTP(w, r)
+}
+
+func (r *Route) buildHandler() {
+	r.handler = r.group.router.buildHandler(r.rawHandler)
 }
 
 // Get defines a new `GET` route.
